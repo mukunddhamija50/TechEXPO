@@ -7,7 +7,7 @@ AI-powered resume maker & scanner + real-time job feed + company-fit matching + 
 | # | Feature | What it does |
 |---|---------|--------------|
 | 1 | **Resume Maker** (`/api/resume/generate`) | Turns a structured profile into a polished, ATS-friendly resume. Rewrites weak phrasing ("responsible for…" → strong action verbs), orders skills to match the target role, mines raw text for extra skills, and returns improvement suggestions. |
-| 2 | **Resume Scanner** (`/api/resume/scan/file`) | Analyzes a PDF resume: extracts text, detects skills from a 55+ skill taxonomy (with aliases), estimates seniority, extracts contact/education, and produces an ATS-readiness score (0–100) with specific fixes. |
+| 2 | **Resume Scanner** (`/api/resume/scan`) | Parses pasted resume text: detects skills from a 55+ skill taxonomy (with aliases), estimates seniority, extracts contact/education, and produces an ATS-readiness score (0–100) with specific fixes. |
 | 3 | **Real-time job API** (`/api/jobs`) | Live listings from the public **Remotive** API (no key needed). Optional **Adzuna** support (set `ADZUNA_APP_ID` / `ADZUNA_APP_KEY`). 10-minute cache, and a built-in curated company dataset as final fallback so the product never shows an empty screen. |
 | 4 | **Company Match** (`/api/match/companies`) | Ranks companies by fit % against your skills (weighted matching), split into *Ready now (70%+)* / *Close* / *Stretch*, with matched vs missing skills per company. |
 | 5 | **Skill Gap Roadmap** (`/api/match/gap`) | For any company you're *not* ready for: which skills are missing, in what order to learn them (highest-impact first), weekly schedule, free learning resources, and your projected fit % after completing the roadmap. |
@@ -18,7 +18,7 @@ AI-powered resume maker & scanner + real-time job feed + company-fit matching + 
 ```bash
 cd skillmatch
 pip install -r requirements.txt
-uvicorn main:app --reload
+uvicorn app.main:app --reload
 ```
 
 - Web app: http://localhost:8000
@@ -28,17 +28,15 @@ uvicorn main:app --reload
 
 ```
 skillmatch/
-├── main.py           # FastAPI routes + serves the web UI (run THIS file)
-├── skills.py         # skill taxonomy + extraction engine
-├── job_sources.py    # real-time job layer: Remotive/Adzuna → cache → seed
-├── resume_maker.py   # resume generation engine
-├── scanner.py        # resume parsing + ATS scoring
-├── matcher.py        # company fit matching + gap roadmap
-├── test_bank.py      # skill question bank + grading
-├── static/
-│   ├── index.html    # page structure
-│   ├── style.css     # styles
-│   └── script.js     # frontend logic (API calls, rendering)
+├── app/
+│   ├── main.py         # FastAPI routes + serves the web UI
+│   ├── skills.py       # skill taxonomy + extraction engine
+│   ├── job_sources.py  # real-time job layer: Remotive/Adzuna → cache → seed
+│   ├── resume_maker.py # resume generation engine
+│   ├── scanner.py      # resume parsing + ATS scoring
+│   ├── matcher.py      # company fit matching + gap roadmap
+│   └── test_bank.py    # skill question bank + grading
+├── static/index.html   # single-page web app
 └── requirements.txt
 ```
 
@@ -48,9 +46,10 @@ skillmatch/
 # live jobs
 curl "http://localhost:8000/api/jobs?query=python&limit=10"
 
-# scan a PDF resume
-curl -X POST http://localhost:8000/api/resume/scan/file \
-  -F 'file=@resume.pdf'
+# scan a resume (paste text)
+curl -X POST http://localhost:8000/api/resume/scan \
+  -H 'Content-Type: application/json' \
+  -d '{"text": "Mukund ... Python, Django, SQL, Docker ..."}'
 
 # generate a resume
 curl -X POST http://localhost:8000/api/resume/generate \
